@@ -1,56 +1,1 @@
-"""
-    get_urls(path)
-    # return a list of all valid wiki links in https://zh.wikipedia.org/wiki/{name}
-
-"""
-import requests
-from requests.exceptions import ProxyError
-from bs4 import BeautifulSoup as Bs
-from urllib import parse
-import random
-
-headers = {
-    'User_Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/54.0.2840.98 Safari/537.36'
-}
-proxies = {
-    'http': 'http://12.33.254.195:3128',
-    'https': 'http://12.33.254.195:3128'
-}
-
-
-def get_urls(path):
-    """
-
-    :param path: /wiki/<词条名称>
-    :return: list of all valid wiki links in https://zh.wikipedia.org/wiki/<词条名称>
-    """
-    urls = set()
-    while True:
-        try:
-            page = requests.get('https://zh.wikipedia.org' + path,
-                                headers=headers, timeout=5, proxies=proxies, allow_redirects=False)
-        except ProxyError:
-            print('代理超时 重试')
-        else:
-            html = page.text
-            soup = Bs(html, 'lxml')
-            # print(soup.prettify())
-            for url in soup.find(id='bodyContent').findAll('a'):
-                href = url.get('href', False)
-                if href and href.startswith('/wiki') and ':' not in href:
-                    urls.add(href)
-            break
-    return list(urls)
-
-if __name__ == '__main__':
-    quoted_path = parse.quote('/wiki/' + '中国')
-    print('Start at: https://zh.wikipedia.org' + parse.unquote(quoted_path))
-    links = get_urls(quoted_path)
-    while True:
-        if not links:
-            print('没有链接啦～')
-            break
-        random_url = random.choice(links)
-        print('进入: https://zh.wikipedia.org' + parse.unquote(random_url))
-        links = get_urls(random_url)
+"""    get_urls(path)    # return a list of all valid wiki links in https://zh.wikipedia.org/wiki/{name}"""import requestsfrom requests.exceptions import ProxyError, ConnectTimeout, SSLErrorfrom bs4 import BeautifulSoup as Bsfrom urllib import parseimport timeimport randomheaders = {    'User_Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) '                  'Chrome/54.0.2840.98 Safari/537.36'}# proxies = IpPool('https://zh.wikipedia.org/wiki/2007%E5%B9%B4%E5%A4%'                 # 'A7%E8%A5%BF%E6%B4%8B%E9%A2%B6%E9%A2%A8%E5%AD%A3', ip_number=5, foreign=True).give_me_ip()proxies = {    'http': 'http://12.33.254.195:3128',    'https': 'http://12.33.254.195:3128'}def get_urls(path):    """    :param path: /wiki/<词条名称>    :return: list of all valid wiki links in https://zh.wikipedia.org/wiki/<词条名称>    """    urls = set()    # check if thr path was encoded    if '%' not in path:        path = parse.quote(path)    while True:        try:            # requests.exceptions.SSLError: ("bad handshake: SysCallError(54, 'ECONNRESET')",)            # set verify to False can solve it but will throw error            # so make another except expression to catch the SSLError error            page = requests.get('https://zh.wikipedia.org' + path,                                headers=headers, timeout=5, proxies=proxies)            # 注意 get不要有禁止重定向 因为会返回301 定向到：            # 'https://zh.wikipedia.org/wiki/Wikipedia:%E9%A6%96%E9%A1%B5'        except ProxyError:            print('代理超时 重试')        except ConnectTimeout:            print('代理挂了 重试')        except SSLError:            print('证书验证出错 重试')        else:            html = page.text            soup = Bs(html, 'lxml')            time.sleep(3)            for url in soup.find(id='bodyContent').findAll('a'):                href = url.get('href', False)                if href and href.startswith('/wiki') and ':' not in href:                    urls.add(href)            break    return list(urls)if __name__ == '__main__':    start = ''    print('Start at: https://zh.wikipedia.org' + start)    links = get_urls(start)    while True:        if not links:            print('没有链接啦～')            break        random_url = random.choice(links)        print('进入: https://zh.wikipedia.org' + parse.unquote(random_url))        links = get_urls(random_url)
