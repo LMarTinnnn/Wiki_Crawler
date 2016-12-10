@@ -54,7 +54,7 @@ class SoupRefiner(object):
             elif link.startswith('/'):
                 complete_link = include_url + link
                 internal_links.add(complete_link)
-        return internal_links
+        return list(internal_links)
 
     def get_external_links(self, exclude_url):
         """
@@ -73,4 +73,4 @@ class SoupRefiner(object):
                 if exclude_url not in link:
                     external_links.add(link)
 
-        return external_links
+        return list(external_links)
