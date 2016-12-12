@@ -1,5 +1,6 @@
 from Wiki_Crawler_Helper.get_links import get_links
 from config.config import headers
+import config.config
 import requests
 from urllib import parse
 from bs4 import BeautifulSoup
@@ -11,9 +12,10 @@ from google_get_country import get_country
 from collections import Counter
 
 
-def get_history_ips(wiki_name):
+def get_history_ips(wiki_name, proxies):
+    # 这个页面会限制ip访问次数
     history_url = 'http://vs.aka-online.de/cgi-bin/wppagehiststat.pl?lang=zh.wikipedia&page=' + wiki_name
-    res = requests.get(history_url, headers=headers, timeout=3)
+    res = requests.get(history_url, headers=headers, timeout=3, proxies=proxies)
     html = res.text
     soup = BeautifulSoup(html, 'lxml')
     print(soup.prettify())
@@ -23,7 +25,7 @@ def get_history_ips(wiki_name):
     return ip_addresses
 
 
-if __name__ == '__main__':
+def main():
     # 从首页开始随机爬
     # 广度优先
     links = get_links('')
@@ -31,13 +33,15 @@ if __name__ == '__main__':
     c = Counter()
     seen.add('')
     while len(links) > 0:
+        # 给历史修改者函数送一个代理
+        proxy = config.config.proxies
         for link in links:
             if link in seen:
                 continue
             seen.add(link)
             name = parse.unquote(link.strip('/wiki/'))
             print('\n---------------------- Start Counter at [%s] ----------------------' % name)
-            ips = get_history_ips(name)
+            ips = get_history_ips(name, proxy)
             if not ips:
                 print('此页面没有匿名修改\n')
             else:
@@ -52,8 +56,5 @@ if __name__ == '__main__':
         links = get_links(random.choice(links))
 
 
-
-
-
-
-
+if __name__ == '__main__':
+    main()
